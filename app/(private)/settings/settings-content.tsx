@@ -28,6 +28,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import type { UserProfile } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
+import { updateUserProfile } from "@/lib/actions/user"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,11 +40,24 @@ interface SettingsContentProps {
 // ─── Profile Section ──────────────────────────────────────────────────────────
 
 function ProfileSection({ profile }: { profile: UserProfile | null }) {
-  const name = profile?.name ?? ""
-  const nameParts = name.split(" ")
-  const firstName = nameParts[0] ?? ""
-  const lastName = nameParts.slice(1).join(" ")
+  const nameParts = (profile?.name ?? "").split(" ")
+  const [firstName, setFirstName] = React.useState(nameParts[0] ?? "")
+  const [lastName, setLastName] = React.useState(nameParts.slice(1).join(" "))
+  const [saving, setSaving] = React.useState(false)
   const initials = nameParts.map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "?"
+
+  async function handleSave() {
+    const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
+    if (!name) return
+    setSaving(true)
+    try {
+      await updateUserProfile({ name })
+    } catch {
+      // TODO: show toast
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <section className="space-y-4">
@@ -54,11 +68,11 @@ function ProfileSection({ profile }: { profile: UserProfile | null }) {
 
       <div className="flex items-center gap-4">
         <Avatar className="size-16">
-          {profile?.image && <AvatarImage src={profile.image} alt={name} />}
+          {profile?.image && <AvatarImage src={profile.image} alt={profile?.name ?? ""} />}
           <AvatarFallback className="text-lg font-bold bg-primary text-primary-foreground">{initials}</AvatarFallback>
         </Avatar>
         <div className="space-y-1">
-          <p className="text-sm font-medium">{name || "Unknown"}</p>
+          <p className="text-sm font-medium">{profile?.name || "Unknown"}</p>
           <p className="text-xs text-muted-foreground">{profile?.email ?? ""}</p>
           <p className="text-[10px] text-muted-foreground">Signed in with Google</p>
         </div>
@@ -67,11 +81,11 @@ function ProfileSection({ profile }: { profile: UserProfile | null }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="first-name" className="text-xs font-medium">First name</Label>
-          <Input id="first-name" defaultValue={firstName} className="text-sm" />
+          <Input id="first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="text-sm" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="last-name" className="text-xs font-medium">Last name</Label>
-          <Input id="last-name" defaultValue={lastName} className="text-sm" />
+          <Input id="last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="text-sm" />
         </div>
       </div>
 
@@ -91,9 +105,9 @@ function ProfileSection({ profile }: { profile: UserProfile | null }) {
         <p className="text-[10px] text-muted-foreground">Email is managed by your Google account</p>
       </div>
 
-      <Button size="sm" className="gap-1.5">
+      <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving}>
         <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-        Save changes
+        {saving ? "Saving..." : "Save changes"}
       </Button>
     </section>
   )

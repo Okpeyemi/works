@@ -29,6 +29,9 @@ import {
 import type { Link, Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
+import { emptyTrash } from "@/lib/actions/trash"
+import { restoreLink, deleteLink } from "@/lib/actions/links"
+import { restoreFolder, deleteFolder } from "@/lib/actions/folders"
 
 // ─── Trash Content ────────────────────────────────────────────────────────────
 
@@ -49,6 +52,55 @@ function daysUntilExpiry(trashedAt: string | null): string {
 
 export function TrashContent({ user, links, folders }: TrashContentProps) {
   const [selectedItems, setSelectedItems] = React.useState<Set<string>>(new Set())
+  const [emptying, setEmptying] = React.useState(false)
+
+  async function handleEmptyTrash() {
+    setEmptying(true)
+    try {
+      await emptyTrash()
+      setSelectedItems(new Set())
+    } catch {
+      // TODO: show toast
+    } finally {
+      setEmptying(false)
+    }
+  }
+
+  async function handleRestore(id: string, type: "link" | "folder") {
+    try {
+      if (type === "link") await restoreLink(id)
+      else await restoreFolder(id)
+    } catch {
+      // TODO: show toast
+    }
+  }
+
+  async function handleDeletePermanently(id: string, type: "link" | "folder") {
+    try {
+      if (type === "link") await deleteLink(id)
+      else await deleteFolder(id)
+    } catch {
+      // TODO: show toast
+    }
+  }
+
+  async function handleBulkRestore() {
+    for (const item of allItems) {
+      if (selectedItems.has(item.id)) {
+        await handleRestore(item.id, item.type)
+      }
+    }
+    setSelectedItems(new Set())
+  }
+
+  async function handleBulkDelete() {
+    for (const item of allItems) {
+      if (selectedItems.has(item.id)) {
+        await handleDeletePermanently(item.id, item.type)
+      }
+    }
+    setSelectedItems(new Set())
+  }
 
   const allItems = React.useMemo(() => {
     const items: Array<{ id: string; type: "link" | "folder"; title: string; domain: string; url: string; trashedAt: string | null }> = []
@@ -88,9 +140,9 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
             <Input placeholder="Search trash..." className="pl-8 h-8 text-xs w-56" />
           </div>
           {allItems.length > 0 && (
-            <Button variant="destructive" size="sm" className="gap-1.5 text-xs">
+            <Button variant="destructive" size="sm" className="gap-1.5 text-xs" onClick={handleEmptyTrash} disabled={emptying}>
               <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-              Empty Trash
+              {emptying ? "Emptying..." : "Empty Trash"}
             </Button>
           )}
         </div>
@@ -101,11 +153,11 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
         <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2">
           <span className="text-xs font-medium text-primary">{selectedItems.size} selected</span>
           <Separator orientation="vertical" className="h-4" />
-          <Button variant="ghost" size="xs" className="gap-1.5 text-xs">
+          <Button variant="ghost" size="xs" className="gap-1.5 text-xs" onClick={handleBulkRestore}>
             <HugeiconsIcon icon={RestoreBinIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Restore
           </Button>
-          <Button variant="ghost" size="xs" className="gap-1.5 text-xs text-destructive">
+          <Button variant="ghost" size="xs" className="gap-1.5 text-xs text-destructive" onClick={handleBulkDelete}>
             <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Delete permanently
           </Button>
@@ -184,7 +236,7 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem className="gap-2 text-xs">
+                  <DropdownMenuItem className="gap-2 text-xs" onClick={() => handleRestore(item.id, item.type)}>
                     <HugeiconsIcon icon={RestoreBinIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Restore
                   </DropdownMenuItem>
@@ -197,13 +249,13 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
                     </DropdownMenuItem>
                   )}
                   {item.url && (
-                    <DropdownMenuItem className="gap-2 text-xs">
+                    <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(item.url)}>
                       <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                       Copy URL
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 text-xs text-destructive">
+                  <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => handleDeletePermanently(item.id, item.type)}>
                     <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Delete permanently
                   </DropdownMenuItem>

@@ -32,7 +32,7 @@ import {
 import type { Link, Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
-
+import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
 // ─── Favorites Content ────────────────────────────────────────────────────────
 
 interface FavoritesContentProps {
@@ -186,7 +186,7 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
                           Open link
                         </a>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-xs">
+                      <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
                         <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Copy URL
                       </DropdownMenuItem>
@@ -194,12 +194,12 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
                         <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-xs">
+                      <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, false)}>
                         <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Unfavorite
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2 text-xs text-destructive">
+                      <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
                         <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Move to Trash
                       </DropdownMenuItem>
@@ -278,16 +278,16 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
                       Open link
                     </a>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs">
+                  <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
                     <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Copy URL
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs">
+                  <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, false)}>
                     <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Unfavorite
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 text-xs text-destructive">
+                  <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
                     <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Move to Trash
                   </DropdownMenuItem>

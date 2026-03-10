@@ -36,28 +36,50 @@ import {
 import type { Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
+import { createFolder, trashFolder } from "@/lib/actions/folders"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
 
 function NewFolderDialog({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false)
+  const [name, setName] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
+
+  async function handleCreate() {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setLoading(true)
+    try {
+      await createFolder({ name: trimmed })
+      setName("")
+      setOpen(false)
+    } catch {
+      // TODO: show toast
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setName("") }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>New folder</DialogTitle>
           <DialogDescription>Create a new folder to organize your links.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-2">
+        <form onSubmit={(e) => { e.preventDefault(); handleCreate() }} className="space-y-3 py-2">
           <div className="space-y-2">
             <Label htmlFor="folder-name" className="text-sm font-medium">Folder name</Label>
-            <Input id="folder-name" placeholder="Untitled folder" />
+            <Input id="folder-name" placeholder="Untitled folder" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm">Cancel</Button>
-          <Button size="sm">Create</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)} disabled={loading}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={loading || !name.trim()}>
+              {loading ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -166,7 +188,7 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
                           Share
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="gap-2 text-xs text-destructive">
+                        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashFolder(folder.id)}>
                           <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                           Delete
                         </DropdownMenuItem>

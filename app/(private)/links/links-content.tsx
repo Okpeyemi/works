@@ -39,6 +39,7 @@ import {
 import type { Link, Folder, Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
+import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
 
 // ─── Link Context Menu ────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ function LinkContextMenu({ link }: { link: Link }) {
             Open link
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs">
+        <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
           <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Copy URL
         </DropdownMenuItem>
@@ -69,12 +70,12 @@ function LinkContextMenu({ link }: { link: Link }) {
           <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Share
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs">
+        <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite)}>
           <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          Favorite
+          {link.is_favorite ? "Unfavorite" : "Favorite"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 text-xs text-destructive">
+        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
           <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Move to Trash
         </DropdownMenuItem>
@@ -121,7 +122,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <AddLinkDialog>
+          <AddLinkDialog folders={folders}>
             <Button size="sm" className="gap-1.5">
               <HugeiconsIcon icon={Link01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add Link
@@ -188,7 +189,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
           <p className="text-xs text-muted-foreground mt-1 max-w-xs">
             Add your first link to get started.
           </p>
-          <AddLinkDialog>
+          <AddLinkDialog folders={folders}>
             <Button size="sm" className="mt-4 gap-1.5">
               <HugeiconsIcon icon={Add01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add your first link

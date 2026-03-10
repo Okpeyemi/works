@@ -25,6 +25,7 @@ import {
 import type { Link } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatRelativeTime } from "@/lib/utils"
+import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
 
 // ─── Recent Content ───────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ function RecentLinkRow({ link }: { link: Link }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem className="gap-2 text-xs">
+            <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
               <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Copy URL
             </DropdownMenuItem>
@@ -128,12 +129,12 @@ function RecentLinkRow({ link }: { link: Link }) {
               <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-xs">
+            <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite)}>
               <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-              Favorite
+              {link.is_favorite ? "Unfavorite" : "Favorite"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-xs text-destructive">
+            <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
               <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Move to Trash
             </DropdownMenuItem>

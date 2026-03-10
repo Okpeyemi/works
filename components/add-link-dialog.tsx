@@ -30,22 +30,24 @@ import {
   PlusSignIcon,
   ArrowUpRight01Icon,
 } from "@hugeicons/core-free-icons"
+import { createLink } from "@/lib/actions/links"
+import type { Folder } from "@/lib/types"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface AddLinkDialogProps {
   children: React.ReactNode
-  folders?: string[]
+  folders?: Folder[]
 }
-
-const DEFAULT_FOLDERS = ["Development", "Design", "Marketing", "Personal", "Reading List"]
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-function AddLinkDialog({ children, folders = DEFAULT_FOLDERS }: AddLinkDialogProps) {
+function AddLinkDialog({ children, folders = [] }: AddLinkDialogProps) {
   const { url, setUrl, preview, isLoading, reset } = useLinkPreview(600)
   const [title, setTitle] = React.useState("")
   const [description, setDescription] = React.useState("")
+  const [folderId, setFolderId] = React.useState<string | null>(null)
+  const [saving, setSaving] = React.useState(false)
   const [open, setOpen] = React.useState(false)
 
   // Auto-fill title & description when preview loads
@@ -62,10 +64,30 @@ function AddLinkDialog({ children, folders = DEFAULT_FOLDERS }: AddLinkDialogPro
   function handleOpenChange(next: boolean) {
     setOpen(next)
     if (!next) {
-      // Reset form on close
       reset()
       setTitle("")
       setDescription("")
+      setFolderId(null)
+    }
+  }
+
+  async function handleSave() {
+    if (!url.trim() || !preview) return
+    setSaving(true)
+    try {
+      await createLink({
+        url: url.trim(),
+        title: title.trim() || preview.title,
+        description: description.trim() || preview.description,
+        favicon: preview.favicon,
+        domain: preview.domain,
+        folder_id: folderId,
+      })
+      handleOpenChange(false)
+    } catch {
+      // TODO: show toast
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -158,13 +180,13 @@ function AddLinkDialog({ children, folders = DEFAULT_FOLDERS }: AddLinkDialogPro
             {/* Folder */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Folder</Label>
-              <Select>
+              <Select value={folderId ?? ""} onValueChange={(v) => setFolderId(v || null)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="No folder" />
                 </SelectTrigger>
                 <SelectContent>
                   {folders.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                    <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -208,12 +230,12 @@ function AddLinkDialog({ children, folders = DEFAULT_FOLDERS }: AddLinkDialogPro
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" size="sm" onClick={() => handleOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button size="sm" className="gap-1.5" disabled={!url.trim()}>
+          <Button size="sm" className="gap-1.5" disabled={!url.trim() || !preview || saving} onClick={handleSave}>
             <HugeiconsIcon icon={PlusSignIcon} size={14} color="currentColor" strokeWidth={2} aria-hidden="true" />
-            Save Link
+            {saving ? "Saving..." : "Save Link"}
           </Button>
         </DialogFooter>
       </DialogContent>

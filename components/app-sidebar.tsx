@@ -138,7 +138,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
       <SidebarHeader className="gap-3 p-4">
         {/* Logo */}
         <div className="inline-icon">
-          <span className="font-bold text-xl text-sidebar-foreground tracking-tight">
+          <span className="font-bold text-3xl text-sidebar-foreground tracking-tight">
             bunkle.
           </span>
         </div>

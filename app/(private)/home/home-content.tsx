@@ -50,12 +50,33 @@ import {
 import type { Link, Folder, Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
+import { createFolder } from "@/lib/actions/folders"
+import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
 
 function NewFolderDialog({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false)
+  const [name, setName] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
+
+  async function handleCreate() {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setLoading(true)
+    try {
+      await createFolder({ name: trimmed })
+      setName("")
+      setOpen(false)
+    } catch {
+      // TODO: show toast
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setName("") }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
@@ -64,16 +85,18 @@ function NewFolderDialog({ children }: { children: React.ReactNode }) {
             Create a new folder to organize your links.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-2">
+        <form onSubmit={(e) => { e.preventDefault(); handleCreate() }} className="space-y-3 py-2">
           <div className="space-y-2">
             <Label htmlFor="folder-name" className="text-sm font-medium">Folder name</Label>
-            <Input id="folder-name" placeholder="Untitled folder" />
+            <Input id="folder-name" placeholder="Untitled folder" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm">Cancel</Button>
-          <Button size="sm">Create</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)} disabled={loading}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={loading || !name.trim()}>
+              {loading ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -102,7 +125,7 @@ function LinkContextMenu({ link }: { link: Link }) {
             Open link
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs">
+        <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
           <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Copy URL
         </DropdownMenuItem>
@@ -114,12 +137,12 @@ function LinkContextMenu({ link }: { link: Link }) {
           <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Share
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs">
+        <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite)}>
           <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          Favorite
+          {link.is_favorite ? "Unfavorite" : "Favorite"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 text-xs text-destructive">
+        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
           <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Move to Trash
         </DropdownMenuItem>
@@ -160,7 +183,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
       {/* ── Quick actions bar ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <AddLinkDialog>
+          <AddLinkDialog folders={folders}>
             <Button size="sm" className="gap-1.5">
               <HugeiconsIcon icon={Link01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add Link
@@ -255,7 +278,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
           <p className="text-xs text-muted-foreground mt-1 max-w-xs">
             Start by adding your first link to organize and share your bookmarks.
           </p>
-          <AddLinkDialog>
+          <AddLinkDialog folders={folders}>
             <Button size="sm" className="mt-4 gap-1.5">
               <HugeiconsIcon icon={Add01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add your first link
@@ -268,7 +291,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
       {links.length > 0 && viewMode === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {/* Add link card */}
-          <AddLinkDialog>
+          <AddLinkDialog folders={folders}>
             <div className="flex flex-col rounded-xl border-2 border-dashed border-border bg-muted/20 overflow-hidden cursor-pointer hover:border-primary/40 hover:bg-muted/40 transition-all group min-h-45">
               <div className="flex flex-1 flex-col items-center justify-center gap-2.5">
                 <Button

@@ -27,6 +27,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
+import { deleteShare } from "@/lib/actions/shares"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -170,13 +171,13 @@ export function SharedContent({ user, shares }: SharedContentProps) {
                       </DropdownMenuItem>
                     )}
                     {url && (
-                      <DropdownMenuItem className="gap-2 text-xs">
+                      <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(url)}>
                         <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Copy URL
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="gap-2 text-xs text-destructive">
+                    <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => deleteShare(share.id)}>
                       <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                       Remove
                     </DropdownMenuItem>
