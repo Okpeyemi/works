@@ -40,48 +40,54 @@ import type { Link, Folder, Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
+import { EditLinkDialog } from "@/components/edit-link-dialog"
 import { toast } from "sonner"
 
 // ─── Link Context Menu ────────────────────────────────────────────────────────
 
-function LinkContextMenu({ link }: { link: Link }) {
+function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
+  const [editOpen, setEditOpen] = React.useState(false)
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`More options for ${link.title}`} onClick={(e) => e.stopPropagation()}>
-          <HugeiconsIcon icon={MoreHorizontalIcon} size={14} color="currentColor" strokeWidth={2} aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem className="gap-2 text-xs" asChild>
-          <a href={link.url} target="_blank" rel="noopener noreferrer">
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-            Open link
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
-          <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          Copy URL
-        </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs">
-          <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs">
-          <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          Share
-        </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite).then(() => toast.success(link.is_favorite ? "Removed from favorites" : "Added to favorites")).catch(() => toast.error("Failed to update favorite"))}>
-          <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          {link.is_favorite ? "Unfavorite" : "Favorite"}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
-          <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          Move to Trash
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`More options for ${link.title}`} onClick={(e) => e.stopPropagation()}>
+            <HugeiconsIcon icon={MoreHorizontalIcon} size={14} color="currentColor" strokeWidth={2} aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem className="gap-2 text-xs" asChild>
+            <a href={link.url} target="_blank" rel="noopener noreferrer">
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+              Open link
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
+            <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+            Copy URL
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditOpen(true)}>
+            <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2 text-xs">
+            <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+            Share
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite).then(() => toast.success(link.is_favorite ? "Removed from favorites" : "Added to favorites")).catch(() => toast.error("Failed to update favorite"))}>
+            <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+            {link.is_favorite ? "Unfavorite" : "Favorite"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
+            <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+            Move to Trash
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <EditLinkDialog link={link} folders={folders} open={editOpen} onOpenChange={setEditOpen} />
+    </>
   )
 }
 
@@ -265,7 +271,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
                     <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`Open ${link.title}`} onClick={(e) => { e.stopPropagation(); window.open(link.url, "_blank") }}>
                       <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} color="currentColor" strokeWidth={2} aria-hidden="true" />
                     </Button>
-                    <LinkContextMenu link={link} />
+                    <LinkContextMenu link={link} folders={folders} />
                   </div>
                 </div>
               </div>
@@ -334,7 +340,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
                     Private
                   </Badge>
                 </div>
-                <LinkContextMenu link={link} />
+                <LinkContextMenu link={link} folders={folders} />
               </div>
             )
           })}

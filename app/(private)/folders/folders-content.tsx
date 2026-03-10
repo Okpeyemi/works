@@ -36,7 +36,7 @@ import {
 import type { Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
-import { createFolder, trashFolder } from "@/lib/actions/folders"
+import { createFolder, updateFolder, trashFolder } from "@/lib/actions/folders"
 import { toast } from "sonner"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
@@ -87,6 +87,53 @@ function NewFolderDialog({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Edit Folder Dialog ───────────────────────────────────────────────────────
+
+function EditFolderDialog({ folder, open, onOpenChange }: { folder: Folder; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [name, setName] = React.useState(folder.name)
+  const [loading, setLoading] = React.useState(false)
+
+  React.useEffect(() => { if (open) setName(folder.name) }, [open, folder])
+
+  async function handleSave() {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setLoading(true)
+    try {
+      await updateFolder(folder.id, { name: trimmed })
+      toast.success("Folder renamed")
+      onOpenChange(false)
+    } catch {
+      toast.error("Failed to rename folder")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Rename folder</DialogTitle>
+          <DialogDescription>Enter a new name for this folder.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="space-y-3 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="folder-rename" className="text-sm font-medium">Folder name</Label>
+            <Input id="folder-rename" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={loading || !name.trim()}>
+              {loading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Folders Content ──────────────────────────────────────────────────────────
 
 interface FoldersContentProps {
@@ -96,6 +143,8 @@ interface FoldersContentProps {
 }
 
 export function FoldersContent({ user, folders, linksCountMap }: FoldersContentProps) {
+  const [editingFolder, setEditingFolder] = React.useState<Folder | null>(null)
+
   return (
     <DashboardShell title="Folders" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Folders" }]} user={user}>
 
@@ -181,7 +230,7 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem className="gap-2 text-xs">
+                        <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditingFolder(folder)}>
                           <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                           Rename
                         </DropdownMenuItem>
@@ -216,6 +265,15 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
             )
           })}
         </div>
+      )}
+
+      {/* ── Edit Folder Dialog ── */}
+      {editingFolder && (
+        <EditFolderDialog
+          folder={editingFolder}
+          open={!!editingFolder}
+          onOpenChange={(open) => { if (!open) setEditingFolder(null) }}
+        />
       )}
     </DashboardShell>
   )

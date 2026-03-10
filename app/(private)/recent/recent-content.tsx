@@ -22,10 +22,11 @@ import {
   Delete01Icon,
   Link01Icon,
 } from "@hugeicons/core-free-icons"
-import type { Link } from "@/lib/types"
+import type { Link, Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatRelativeTime } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
+import { EditLinkDialog } from "@/components/edit-link-dialog"
 import { toast } from "sonner"
 
 // ─── Recent Content ───────────────────────────────────────────────────────────
@@ -33,9 +34,10 @@ import { toast } from "sonner"
 interface RecentContentProps {
   user: SidebarUser | null
   links: Link[]
+  folders: Folder[]
 }
 
-export function RecentContent({ user, links }: RecentContentProps) {
+export function RecentContent({ user, links, folders }: RecentContentProps) {
   const now = new Date()
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -70,7 +72,7 @@ export function RecentContent({ user, links }: RecentContentProps) {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</h3>
           <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
             {todayLinks.map((link) => (
-              <RecentLinkRow key={link.id} link={link} />
+              <RecentLinkRow key={link.id} link={link} folders={folders} />
             ))}
           </div>
         </div>
@@ -82,7 +84,7 @@ export function RecentContent({ user, links }: RecentContentProps) {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Earlier</h3>
           <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
             {earlierLinks.map((link) => (
-              <RecentLinkRow key={link.id} link={link} />
+              <RecentLinkRow key={link.id} link={link} folders={folders} />
             ))}
           </div>
         </div>
@@ -93,55 +95,60 @@ export function RecentContent({ user, links }: RecentContentProps) {
 
 // ─── Recent Link Row ──────────────────────────────────────────────────────────
 
-function RecentLinkRow({ link }: { link: Link }) {
+function RecentLinkRow({ link, folders }: { link: Link; folders: Folder[] }) {
+  const [editOpen, setEditOpen] = React.useState(false)
+
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
-      <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-        <LinkFavicon domain={link.domain} size={32} />
-      </div>
+    <>
+      <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+        <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+          <LinkFavicon domain={link.domain} size={32} />
+        </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{link.title}</p>
-        <p className="text-[10px] text-muted-foreground truncate">{link.domain}</p>
-      </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{link.title}</p>
+          <p className="text-[10px] text-muted-foreground truncate">{link.domain}</p>
+        </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
-          <HugeiconsIcon icon={Clock01Icon} size={11} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-          {formatRelativeTime(link.created_at)}
-        </span>
-        <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`Open ${link.title}`} asChild>
-          <a href={link.url} target="_blank" rel="noopener noreferrer">
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} color="currentColor" strokeWidth={2} aria-hidden="true" />
-          </a>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`More options for ${link.title}`}>
-              <HugeiconsIcon icon={MoreHorizontalIcon} size={14} color="currentColor" strokeWidth={2} aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
-              <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-              Copy URL
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-xs">
-              <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite).then(() => toast.success(link.is_favorite ? "Removed from favorites" : "Added to favorites")).catch(() => toast.error("Failed to update favorite"))}>
-              <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-              {link.is_favorite ? "Unfavorite" : "Favorite"}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
-              <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-              Move to Trash
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
+            <HugeiconsIcon icon={Clock01Icon} size={11} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+            {formatRelativeTime(link.created_at)}
+          </span>
+          <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`Open ${link.title}`} asChild>
+            <a href={link.url} target="_blank" rel="noopener noreferrer">
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} color="currentColor" strokeWidth={2} aria-hidden="true" />
+            </a>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`More options for ${link.title}`}>
+                <HugeiconsIcon icon={MoreHorizontalIcon} size={14} color="currentColor" strokeWidth={2} aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem className="gap-2 text-xs" onClick={() => navigator.clipboard.writeText(link.url)}>
+                <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+                Copy URL
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditOpen(true)}>
+                <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite).then(() => toast.success(link.is_favorite ? "Removed from favorites" : "Added to favorites")).catch(() => toast.error("Failed to update favorite"))}>
+                <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+                {link.is_favorite ? "Unfavorite" : "Favorite"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
+                <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+                Move to Trash
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </div>
+      <EditLinkDialog link={link} folders={folders} open={editOpen} onOpenChange={setEditOpen} />
+    </>
   )
 }

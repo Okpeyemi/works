@@ -32,7 +32,7 @@ import {
 import { Label } from "@/components/ui/label"
 import type { Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
-import { createTag, deleteTag } from "@/lib/actions/tags"
+import { createTag, updateTag, deleteTag } from "@/lib/actions/tags"
 import { toast } from "sonner"
 
 // ─── Create Tag Dialog ────────────────────────────────────────────────────────
@@ -83,6 +83,53 @@ function CreateTagDialog({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Edit Tag Dialog ──────────────────────────────────────────────────────────
+
+function EditTagDialog({ tag, open, onOpenChange }: { tag: Tag; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [name, setName] = React.useState(tag.name)
+  const [loading, setLoading] = React.useState(false)
+
+  React.useEffect(() => { if (open) setName(tag.name) }, [open, tag])
+
+  async function handleSave() {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setLoading(true)
+    try {
+      await updateTag(tag.id, { name: trimmed })
+      toast.success("Tag renamed")
+      onOpenChange(false)
+    } catch {
+      toast.error("Failed to rename tag")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Rename tag</DialogTitle>
+          <DialogDescription>Enter a new name for this tag.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="space-y-3 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="tag-rename" className="text-sm font-medium">Tag name</Label>
+            <Input id="tag-rename" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={loading || !name.trim()}>
+              {loading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Tags Content ─────────────────────────────────────────────────────────────
 
 interface TagsContentProps {
@@ -92,6 +139,8 @@ interface TagsContentProps {
 }
 
 export function TagsContent({ user, tags, linksCountMap }: TagsContentProps) {
+  const [editingTag, setEditingTag] = React.useState<Tag | null>(null)
+
   return (
     <DashboardShell title="Tags" user={user} breadcrumbs={[{ label: "Home", href: "/" }, { label: "Tags" }]}>
 
@@ -165,7 +214,7 @@ export function TagsContent({ user, tags, linksCountMap }: TagsContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem className="gap-2 text-xs">
+                  <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditingTag(tag)}>
                     <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Rename
                   </DropdownMenuItem>
@@ -179,6 +228,15 @@ export function TagsContent({ user, tags, linksCountMap }: TagsContentProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── Edit Tag Dialog ── */}
+      {editingTag && (
+        <EditTagDialog
+          tag={editingTag}
+          open={!!editingTag}
+          onOpenChange={(open) => { if (!open) setEditingTag(null) }}
+        />
       )}
     </DashboardShell>
   )

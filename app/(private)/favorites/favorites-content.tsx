@@ -33,7 +33,9 @@ import type { Link, Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
+import { EditLinkDialog } from "@/components/edit-link-dialog"
 import { toast } from "sonner"
+
 // ─── Favorites Content ────────────────────────────────────────────────────────
 
 interface FavoritesContentProps {
@@ -45,6 +47,7 @@ interface FavoritesContentProps {
 export function FavoritesContent({ user, links, folders }: FavoritesContentProps) {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
   const [selectedLinks, setSelectedLinks] = React.useState<Set<string>>(new Set())
+  const [editingLink, setEditingLink] = React.useState<Link | null>(null)
 
   const folderMap = React.useMemo(() => {
     const map = new Map<string, string>()
@@ -191,7 +194,7 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
                         <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Copy URL
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-xs">
+                      <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditingLink(link)}>
                         <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                         Edit
                       </DropdownMenuItem>
@@ -283,12 +286,16 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
                     <HugeiconsIcon icon={Copy01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Copy URL
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, false)}>
+                  <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditingLink(link)}>
+                    <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, false).then(() => toast.success("Removed from favorites")).catch(() => toast.error("Failed to update favorite"))}>
                     <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Unfavorite
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
+                  <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
                     <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Move to Trash
                   </DropdownMenuItem>
@@ -297,6 +304,16 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── Edit Link Dialog ── */}
+      {editingLink && (
+        <EditLinkDialog
+          link={editingLink}
+          folders={folders}
+          open={!!editingLink}
+          onOpenChange={(open) => { if (!open) setEditingLink(null) }}
+        />
       )}
     </DashboardShell>
   )
