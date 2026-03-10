@@ -138,11 +138,8 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
       <SidebarHeader className="gap-3 p-4">
         {/* Logo */}
         <div className="inline-icon">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm select-none">
-            V
-          </div>
-          <span className="font-semibold text-base text-sidebar-foreground tracking-tight">
-            Vault
+          <span className="font-bold text-xl text-sidebar-foreground tracking-tight">
+            bunkle.
           </span>
         </div>
 
