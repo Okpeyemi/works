@@ -28,6 +28,7 @@ import {
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { deleteShare } from "@/lib/actions/shares"
+import { toast } from "sonner"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -177,7 +178,7 @@ export function SharedContent({ user, shares }: SharedContentProps) {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => deleteShare(share.id)}>
+                    <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => deleteShare(share.id).then(() => toast.success("Share removed")).catch(() => toast.error("Failed to remove share"))}>
                       <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                       Remove
                     </DropdownMenuItem>

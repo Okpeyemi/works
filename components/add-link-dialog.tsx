@@ -32,6 +32,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { createLink } from "@/lib/actions/links"
 import type { Folder } from "@/lib/types"
+import { toast } from "sonner"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -83,9 +84,10 @@ function AddLinkDialog({ children, folders = [] }: AddLinkDialogProps) {
         domain: preview.domain,
         folder_id: folderId,
       })
+      toast.success("Link saved")
       handleOpenChange(false)
     } catch {
-      // TODO: show toast
+      toast.error("Failed to save link")
     } finally {
       setSaving(false)
     }

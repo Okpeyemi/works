@@ -37,6 +37,7 @@ import type { Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { createFolder, trashFolder } from "@/lib/actions/folders"
+import { toast } from "sonner"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
 
@@ -53,8 +54,9 @@ function NewFolderDialog({ children }: { children: React.ReactNode }) {
       await createFolder({ name: trimmed })
       setName("")
       setOpen(false)
+      toast.success("Folder created")
     } catch {
-      // TODO: show toast
+      toast.error("Failed to create folder")
     } finally {
       setLoading(false)
     }
@@ -188,7 +190,7 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
                           Share
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashFolder(folder.id)}>
+                        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashFolder(folder.id).then(() => toast.success("Folder moved to trash")).catch(() => toast.error("Failed to delete folder"))}>
                           <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                           Delete
                         </DropdownMenuItem>

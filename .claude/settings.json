@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"createLink\\\\|updateLink\\\\|deleteLink\\\\|trashLink\\\\|restoreLink\" /home/darellchooks/Bureau/works/components --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"TODO.*toast\\\\|// TODO\" /home/darellchooks/Bureau/works --include=*.tsx --include=*.ts)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

@@ -32,8 +32,8 @@ import {
 import { Label } from "@/components/ui/label"
 import type { Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
-import { createTag } from "@/lib/actions/tags"
-import { deleteTag } from "@/lib/actions/tags"
+import { createTag, deleteTag } from "@/lib/actions/tags"
+import { toast } from "sonner"
 
 // ─── Create Tag Dialog ────────────────────────────────────────────────────────
 
@@ -50,8 +50,9 @@ function CreateTagDialog({ children }: { children: React.ReactNode }) {
       await createTag({ name: trimmed })
       setName("")
       setOpen(false)
+      toast.success("Tag created")
     } catch {
-      // TODO: show toast
+      toast.error("Failed to create tag")
     } finally {
       setLoading(false)
     }
@@ -169,7 +170,7 @@ export function TagsContent({ user, tags, linksCountMap }: TagsContentProps) {
                     Rename
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => deleteTag(tag.id)}>
+                  <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => deleteTag(tag.id).then(() => toast.success("Tag deleted")).catch(() => toast.error("Failed to delete tag"))}>
                     <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                     Delete
                   </DropdownMenuItem>

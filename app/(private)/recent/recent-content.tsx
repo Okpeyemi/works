@@ -26,6 +26,7 @@ import type { Link } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatRelativeTime } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
+import { toast } from "sonner"
 
 // ─── Recent Content ───────────────────────────────────────────────────────────
 
@@ -129,12 +130,12 @@ function RecentLinkRow({ link }: { link: Link }) {
               <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite)}>
+            <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite).then(() => toast.success(link.is_favorite ? "Removed from favorites" : "Added to favorites")).catch(() => toast.error("Failed to update favorite"))}>
               <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               {link.is_favorite ? "Unfavorite" : "Favorite"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
+            <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
               <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Move to Trash
             </DropdownMenuItem>

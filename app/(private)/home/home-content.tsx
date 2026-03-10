@@ -52,6 +52,7 @@ import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { createFolder } from "@/lib/actions/folders"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
+import { toast } from "sonner"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
 
@@ -68,8 +69,9 @@ function NewFolderDialog({ children }: { children: React.ReactNode }) {
       await createFolder({ name: trimmed })
       setName("")
       setOpen(false)
+      toast.success("Folder created")
     } catch {
-      // TODO: show toast
+      toast.error("Failed to create folder")
     } finally {
       setLoading(false)
     }
@@ -137,12 +139,12 @@ function LinkContextMenu({ link }: { link: Link }) {
           <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Share
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite)}>
+        <DropdownMenuItem className="gap-2 text-xs" onClick={() => toggleLinkFavorite(link.id, !link.is_favorite).then(() => toast.success(link.is_favorite ? "Removed from favorites" : "Added to favorites")).catch(() => toast.error("Failed to update favorite"))}>
           <HugeiconsIcon icon={StarIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           {link.is_favorite ? "Unfavorite" : "Favorite"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id)}>
+        <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => trashLink(link.id).then(() => toast.success("Link moved to trash")).catch(() => toast.error("Failed to delete link"))}>
           <HugeiconsIcon icon={Delete01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
           Move to Trash
         </DropdownMenuItem>
@@ -241,7 +243,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
       {selectedLinks.size > 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2">
           <span className="text-xs font-medium text-primary">{selectedLinks.size} selected</span>
-          <Separator orientation="vertical" className="h-4" />
+          <Separator orientation="vertical" />
           <Button variant="ghost" size="xs" className="gap-1.5 text-xs">
             <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Share

@@ -29,6 +29,7 @@ import {
 import type { UserProfile } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { updateUserProfile } from "@/lib/actions/user"
+import { toast } from "sonner"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,8 +53,9 @@ function ProfileSection({ profile }: { profile: UserProfile | null }) {
     setSaving(true)
     try {
       await updateUserProfile({ name })
+      toast.success("Profile saved")
     } catch {
-      // TODO: show toast
+      toast.error("Failed to save profile")
     } finally {
       setSaving(false)
     }

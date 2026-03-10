@@ -32,6 +32,7 @@ import { formatDate } from "@/lib/utils"
 import { emptyTrash } from "@/lib/actions/trash"
 import { restoreLink, deleteLink } from "@/lib/actions/links"
 import { restoreFolder, deleteFolder } from "@/lib/actions/folders"
+import { toast } from "sonner"
 
 // ─── Trash Content ────────────────────────────────────────────────────────────
 
@@ -59,8 +60,9 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
     try {
       await emptyTrash()
       setSelectedItems(new Set())
+      toast.success("Trash emptied")
     } catch {
-      // TODO: show toast
+      toast.error("Failed to empty trash")
     } finally {
       setEmptying(false)
     }
@@ -70,8 +72,9 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
     try {
       if (type === "link") await restoreLink(id)
       else await restoreFolder(id)
+      toast.success(`${type === "link" ? "Link" : "Folder"} restored`)
     } catch {
-      // TODO: show toast
+      toast.error("Failed to restore")
     }
   }
 
@@ -79,8 +82,9 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
     try {
       if (type === "link") await deleteLink(id)
       else await deleteFolder(id)
+      toast.success(`${type === "link" ? "Link" : "Folder"} deleted permanently`)
     } catch {
-      // TODO: show toast
+      toast.error("Failed to delete")
     }
   }
 
@@ -152,7 +156,7 @@ export function TrashContent({ user, links, folders }: TrashContentProps) {
       {selectedItems.size > 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2">
           <span className="text-xs font-medium text-primary">{selectedItems.size} selected</span>
-          <Separator orientation="vertical" className="h-4" />
+          <Separator orientation="vertical" />
           <Button variant="ghost" size="xs" className="gap-1.5 text-xs" onClick={handleBulkRestore}>
             <HugeiconsIcon icon={RestoreBinIcon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Restore
