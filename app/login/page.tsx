@@ -52,7 +52,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-3 text-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Welcome to <span className="font-bold text-xl">bunkle.</span>
+              Welcome to <span className="font-bold text-4xl">bunkle.</span>
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Save, organise and share your links in one place.
