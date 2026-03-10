@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar, type SidebarUser } from "@/components/app-sidebar"
 import {
   SidebarInset,
   SidebarProvider,
@@ -31,6 +31,7 @@ interface DashboardShellProps {
   breadcrumbs?: BreadcrumbEntry[]
   actions?: React.ReactNode
   children: React.ReactNode
+  user?: SidebarUser | null
 }
 
 export function DashboardShell({
@@ -38,12 +39,13 @@ export function DashboardShell({
   breadcrumbs,
   actions,
   children,
+  user,
 }: DashboardShellProps) {
   const crumbs: BreadcrumbEntry[] = breadcrumbs ?? [{ label: title }]
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar user={user} />
 
       <SidebarInset>
         {/* ── Top bar ── */}
@@ -83,9 +85,9 @@ export function DashboardShell({
               />
             </Button>
             <Avatar className="size-8">
-              <AvatarImage src="" alt="Azunyan U. Wu" />
+              <AvatarImage src={user?.image ?? ""} alt={user?.name ?? "User"} />
               <AvatarFallback className="text-xs font-semibold bg-primary text-primary-foreground">
-                AU
+                {user?.name ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "U"}
               </AvatarFallback>
             </Avatar>
           </div>

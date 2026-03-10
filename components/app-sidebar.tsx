@@ -37,11 +37,21 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { signOut } from "@/lib/actions/auth"
+
+export interface SidebarUser {
+  name: string | null
+  email: string
+  image: string | null
+  plan: "FREE" | "PRO"
+  links_count: number
+  links_limit: number
+}
 
 // ─── Navigation items ──────────────────────────────────────────────────────────
 
 const mainNav = [
-  { label: "Home",           icon: Home03Icon,        href: "/",           badge: null },
+  { label: "Home",           icon: Home03Icon,        href: "/home",       badge: null },
   { label: "My Links",       icon: Link01Icon,        href: "/links",      badge: null },
   { label: "Folders",        icon: Folder01Icon,      href: "/folders",    badge: null },
   { label: "Shared with Me", icon: FolderSharedIcon,  href: "/shared",     badge: 3    },
@@ -116,11 +126,10 @@ function PromoCard() {
 // ─── AppSidebar ───────────────────────────────────────────────────────────────
 
 function isActive(href: string, pathname: string) {
-  if (href === "/") return pathname === "/"
   return pathname === href || pathname.startsWith(href + "/")
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: SidebarUser | null }) {
   const pathname = usePathname()
 
   return (
@@ -184,11 +193,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
 
                   {item.badge !== null && (
-                    <SidebarMenuBadge className={`rounded-full text-[10px] font-semibold min-w-[20px] ${
-                      isActive(item.href, pathname)
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary"
-                    }`}>
+                    <SidebarMenuBadge className="rounded-full text-[10px] font-semibold bg-chart-1 text-white">
                       {item.badge}
                     </SidebarMenuBadge>
                   )}
@@ -236,10 +241,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="mt-auto mx-4 mb-2 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Links saved</span>
-            <span className="text-[10px] text-muted-foreground">142 / 500</span>
+            <span className="text-[10px] text-muted-foreground">{user?.links_count ?? 0} / {user?.links_limit ?? 500}</span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary/70" style={{ width: "28%" }} />
+            <div className="h-full rounded-full bg-primary/70" style={{ width: `${Math.min(100, ((user?.links_count ?? 0) / (user?.links_limit ?? 500)) * 100)}%` }} />
           </div>
         </div>
       </SidebarContent>
@@ -251,27 +256,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* User row */}
         <div className="flex items-center gap-2.5 px-4 py-3 border-t border-border">
           <Avatar className="size-8 shrink-0">
-            <AvatarImage src="" alt="Azunyan U. Wu" />
+            <AvatarImage src={user?.image ?? ""} alt={user?.name ?? "User"} />
             <AvatarFallback className="text-xs font-semibold bg-primary text-primary-foreground">
-              AU
+              {user?.name ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">
-              Azunyan U. Wu
+              {user?.name ?? "User"}
             </span>
             <span className="text-xs text-muted-foreground truncate leading-tight">
-              Basic Member
+              {user?.plan === "PRO" ? "Pro Member" : "Basic Member"}
             </span>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="shrink-0"
-            aria-label="Log out"
-          >
+          <form action={signOut}>
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              aria-label="Log out"
+            >
             <HugeiconsIcon
               icon={Logout02Icon}
               size={17}
@@ -279,7 +286,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               strokeWidth={1.5}
               aria-hidden="true"
             />
-          </Button>
+            </Button>
+          </form>
         </div>
       </SidebarFooter>
     </Sidebar>
