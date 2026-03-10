@@ -8,7 +8,9 @@
       "Bash(git -C /home/darellchooks/Bureau/works log --oneline -10)",
       "Bash(npm install:*)",
       "Bash(cat app/\\\\\\(private\\\\\\)/recent/page.tsx)",
-      "Bash(cat app/\\\\\\(private\\\\\\)/favorites/page.tsx)"
+      "Bash(cat app/\\\\\\(private\\\\\\)/favorites/page.tsx)",
+      "WebFetch(domain:maileroo.com)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

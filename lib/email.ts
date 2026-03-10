@@ -1,14 +1,15 @@
-import nodemailer from "nodemailer"
+// ─── Maileroo REST API ────────────────────────────────────────────────────────
+// Uses SMTP_PASS as the API key (same credential used for SMTP auth in Maileroo)
+// API key header: X-API-Key
+// Endpoint: https://smtp.maileroo.com/api/v2/emails
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT ?? 587),
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
+const MAILEROO_API = "https://smtp.maileroo.com/api/v2/emails"
+
+function parseSender(from: string): { address: string; display_name: string } {
+  const match = from.match(/^(.*?)\s*<(.+)>$/)
+  if (match) return { display_name: match[1].trim(), address: match[2].trim() }
+  return { display_name: "", address: from.trim() }
+}
 
 export async function sendEmail({
   to,
@@ -19,10 +20,31 @@ export async function sendEmail({
   subject: string
   html: string
 }) {
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM ?? "Darell from bunkle. <team@bunkle.online>",
-    to,
-    subject,
-    html,
+  const apiKey = process.env.SMTP_PASS
+  if (!apiKey) throw new Error("SMTP_PASS (Maileroo API key) is not set")
+
+  const from = parseSender(
+    process.env.SMTP_FROM ?? "Darell from bunkle. <team@bunkle.online>"
+  )
+
+  const res = await fetch(MAILEROO_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey,
+    },
+    body: JSON.stringify({
+      from,
+      to: [{ address: to }],
+      subject,
+      html,
+    }),
   })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => res.statusText)
+    throw new Error(`Maileroo error ${res.status}: ${body}`)
+  }
+
+  return res.json()
 }
