@@ -4,8 +4,8 @@ import { Separator } from "@/components/ui/separator"
 import { signInWithGoogle } from "@/lib/actions/auth"
 
 export const metadata = {
-  title: "Sign in — Vault",
-  description: "Sign in to your Vault account",
+  title: "Sign in — Bunkle",
+  description: "Sign in to your Bunkle account",
 }
 
 // ─── Inline Google "G" logo (brand SVG, not from icon lib) ───────────────────
@@ -50,12 +50,9 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl select-none shadow-sm">
-            V
-          </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Welcome to Vault
+              Welcome to <span className="font-bold text-xl">bunkle.</span>
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Save, organise and share your links in one place.
