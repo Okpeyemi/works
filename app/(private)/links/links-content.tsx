@@ -41,12 +41,14 @@ import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
 import { EditLinkDialog } from "@/components/edit-link-dialog"
+import { ShareDialog } from "@/components/share-dialog"
 import { toast } from "sonner"
 
 // ─── Link Context Menu ────────────────────────────────────────────────────────
 
-function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
+function LinkContextMenu({ link, folders, tags }: { link: Link; folders: Folder[]; tags: Tag[] }) {
   const [editOpen, setEditOpen] = React.useState(false)
+  const [shareOpen, setShareOpen] = React.useState(false)
 
   return (
     <>
@@ -71,7 +73,7 @@ function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
             <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 text-xs">
+          <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setShareOpen(true)}>
             <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Share
           </DropdownMenuItem>
@@ -86,7 +88,8 @@ function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EditLinkDialog link={link} folders={folders} open={editOpen} onOpenChange={setEditOpen} />
+      <EditLinkDialog link={link} folders={folders} tags={tags} open={editOpen} onOpenChange={setEditOpen} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} linkId={link.id} itemTitle={link.title} itemType="link" />
     </>
   )
 }
@@ -97,9 +100,10 @@ interface LinksContentProps {
   user: SidebarUser | null
   links: Link[]
   folders: Folder[]
+  tags: Tag[]
 }
 
-export function LinksContent({ user, links, folders }: LinksContentProps) {
+export function LinksContent({ user, links, folders, tags }: LinksContentProps) {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
   const [selectedLinks, setSelectedLinks] = React.useState<Set<string>>(new Set())
 
@@ -129,7 +133,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <AddLinkDialog folders={folders}>
+          <AddLinkDialog folders={folders} tags={tags}>
             <Button size="sm" className="gap-1.5">
               <HugeiconsIcon icon={Link01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add Link
@@ -196,7 +200,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
           <p className="text-xs text-muted-foreground mt-1 max-w-xs">
             Add your first link to get started.
           </p>
-          <AddLinkDialog folders={folders}>
+          <AddLinkDialog folders={folders} tags={tags}>
             <Button size="sm" className="mt-4 gap-1.5">
               <HugeiconsIcon icon={Add01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add your first link
@@ -271,7 +275,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
                     <Button variant="ghost" size="icon-xs" className="shrink-0" aria-label={`Open ${link.title}`} onClick={(e) => { e.stopPropagation(); window.open(link.url, "_blank") }}>
                       <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} color="currentColor" strokeWidth={2} aria-hidden="true" />
                     </Button>
-                    <LinkContextMenu link={link} folders={folders} />
+                    <LinkContextMenu link={link} folders={folders} tags={tags} />
                   </div>
                 </div>
               </div>
@@ -340,7 +344,7 @@ export function LinksContent({ user, links, folders }: LinksContentProps) {
                     Private
                   </Badge>
                 </div>
-                <LinkContextMenu link={link} folders={folders} />
+                <LinkContextMenu link={link} folders={folders} tags={tags} />
               </div>
             )
           })}

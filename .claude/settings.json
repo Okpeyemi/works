@@ -4,7 +4,11 @@
       "Bash(grep -r \"createLink\\\\|updateLink\\\\|deleteLink\\\\|trashLink\\\\|restoreLink\" /home/darellchooks/Bureau/works/components --include=*.tsx --include=*.ts)",
       "Bash(grep -r \"TODO.*toast\\\\|// TODO\" /home/darellchooks/Bureau/works --include=*.tsx --include=*.ts)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git -C /home/darellchooks/Bureau/works log --oneline -10)",
+      "Bash(npm install:*)",
+      "Bash(cat app/\\\\\\(private\\\\\\)/recent/page.tsx)",
+      "Bash(cat app/\\\\\\(private\\\\\\)/favorites/page.tsx)"
     ]
   }
 }

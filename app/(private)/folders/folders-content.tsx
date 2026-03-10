@@ -37,6 +37,7 @@ import type { Folder } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { createFolder, updateFolder, trashFolder } from "@/lib/actions/folders"
+import { ShareDialog } from "@/components/share-dialog"
 import { toast } from "sonner"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
@@ -144,6 +145,7 @@ interface FoldersContentProps {
 
 export function FoldersContent({ user, folders, linksCountMap }: FoldersContentProps) {
   const [editingFolder, setEditingFolder] = React.useState<Folder | null>(null)
+  const [sharingFolder, setSharingFolder] = React.useState<Folder | null>(null)
 
   return (
     <DashboardShell title="Folders" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Folders" }]} user={user}>
@@ -234,7 +236,7 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
                           <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                           Rename
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 text-xs">
+                        <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setSharingFolder(folder)}>
                           <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
                           Share
                         </DropdownMenuItem>
@@ -275,6 +277,15 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
           onOpenChange={(open) => { if (!open) setEditingFolder(null) }}
         />
       )}
+
+      {/* ── Share Folder Dialog ── */}
+      <ShareDialog
+        open={!!sharingFolder}
+        onOpenChange={(open) => { if (!open) setSharingFolder(null) }}
+        folderId={sharingFolder?.id}
+        itemTitle={sharingFolder?.name ?? ""}
+        itemType="folder"
+      />
     </DashboardShell>
   )
 }

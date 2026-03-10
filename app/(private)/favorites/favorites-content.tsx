@@ -29,7 +29,7 @@ import {
   FolderOpenIcon,
   Link01Icon,
 } from "@hugeicons/core-free-icons"
-import type { Link, Folder } from "@/lib/types"
+import type { Link, Folder, Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
@@ -42,9 +42,10 @@ interface FavoritesContentProps {
   user: SidebarUser | null
   links: Link[]
   folders: Folder[]
+  tags: Tag[]
 }
 
-export function FavoritesContent({ user, links, folders }: FavoritesContentProps) {
+export function FavoritesContent({ user, links, folders, tags }: FavoritesContentProps) {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
   const [selectedLinks, setSelectedLinks] = React.useState<Set<string>>(new Set())
   const [editingLink, setEditingLink] = React.useState<Link | null>(null)
@@ -311,6 +312,7 @@ export function FavoritesContent({ user, links, folders }: FavoritesContentProps
         <EditLinkDialog
           link={editingLink}
           folders={folders}
+          tags={tags}
           open={!!editingLink}
           onOpenChange={(open) => { if (!open) setEditingLink(null) }}
         />

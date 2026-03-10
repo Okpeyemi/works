@@ -22,7 +22,7 @@ import {
   Delete01Icon,
   Link01Icon,
 } from "@hugeicons/core-free-icons"
-import type { Link, Folder } from "@/lib/types"
+import type { Link, Folder, Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatRelativeTime } from "@/lib/utils"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
@@ -35,9 +35,10 @@ interface RecentContentProps {
   user: SidebarUser | null
   links: Link[]
   folders: Folder[]
+  tags: Tag[]
 }
 
-export function RecentContent({ user, links, folders }: RecentContentProps) {
+export function RecentContent({ user, links, folders, tags }: RecentContentProps) {
   const now = new Date()
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -72,7 +73,7 @@ export function RecentContent({ user, links, folders }: RecentContentProps) {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</h3>
           <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
             {todayLinks.map((link) => (
-              <RecentLinkRow key={link.id} link={link} folders={folders} />
+              <RecentLinkRow key={link.id} link={link} folders={folders} tags={tags} />
             ))}
           </div>
         </div>
@@ -84,7 +85,7 @@ export function RecentContent({ user, links, folders }: RecentContentProps) {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Earlier</h3>
           <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
             {earlierLinks.map((link) => (
-              <RecentLinkRow key={link.id} link={link} folders={folders} />
+              <RecentLinkRow key={link.id} link={link} folders={folders} tags={tags} />
             ))}
           </div>
         </div>
@@ -95,7 +96,7 @@ export function RecentContent({ user, links, folders }: RecentContentProps) {
 
 // ─── Recent Link Row ──────────────────────────────────────────────────────────
 
-function RecentLinkRow({ link, folders }: { link: Link; folders: Folder[] }) {
+function RecentLinkRow({ link, folders, tags }: { link: Link; folders: Folder[]; tags: Tag[] }) {
   const [editOpen, setEditOpen] = React.useState(false)
 
   return (
@@ -148,7 +149,7 @@ function RecentLinkRow({ link, folders }: { link: Link; folders: Folder[] }) {
           </DropdownMenu>
         </div>
       </div>
-      <EditLinkDialog link={link} folders={folders} open={editOpen} onOpenChange={setEditOpen} />
+      <EditLinkDialog link={link} folders={folders} tags={tags} open={editOpen} onOpenChange={setEditOpen} />
     </>
   )
 }

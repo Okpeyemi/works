@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { sendEmail } from "@/lib/email"
+import { buildShareEmail } from "@/lib/email-templates"
 
 // ─── Get shares I created ───────────────────────────────────────────────────────
 
@@ -79,6 +81,63 @@ export async function createShare(input: {
     folder_id: input.folder_id || null,
     metadata: { target_email: input.target_email, permission: input.permission || "READ" },
   })
+
+  // ── Send notification email ──────────────────────────────────────────────────
+  try {
+    const { data: ownerProfile } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", user.id)
+      .single()
+
+    const ownerName = ownerProfile?.name ?? ownerProfile?.email ?? "Someone"
+    const ownerEmail = ownerProfile?.email ?? user.email ?? ""
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001"
+
+    let itemType: "link" | "folder" = "link"
+    let itemTitle = "Untitled"
+    let itemUrl: string | undefined
+    let itemDomain: string | undefined
+
+    if (input.link_id) {
+      const { data: link } = await supabase
+        .from("links")
+        .select("title, url, domain")
+        .eq("id", input.link_id)
+        .single()
+      if (link) {
+        itemType = "link"
+        itemTitle = link.title
+        itemUrl = link.url
+        itemDomain = link.domain
+      }
+    } else if (input.folder_id) {
+      const { data: folder } = await supabase
+        .from("folders")
+        .select("name")
+        .eq("id", input.folder_id)
+        .single()
+      if (folder) {
+        itemType = "folder"
+        itemTitle = folder.name
+      }
+    }
+
+    const { subject, html } = buildShareEmail({
+      ownerName,
+      ownerEmail,
+      itemType,
+      itemTitle,
+      itemUrl,
+      itemDomain,
+      permission: input.permission ?? "READ",
+      siteUrl,
+    })
+
+    await sendEmail({ to: input.target_email, subject, html })
+  } catch {
+    // Email sending is best-effort — don't fail the share if email fails
+  }
 
   revalidatePath("/shared")
   return data

@@ -53,6 +53,7 @@ import { formatDate } from "@/lib/utils"
 import { createFolder } from "@/lib/actions/folders"
 import { toggleLinkFavorite, trashLink } from "@/lib/actions/links"
 import { EditLinkDialog } from "@/components/edit-link-dialog"
+import { ShareDialog } from "@/components/share-dialog"
 import { toast } from "sonner"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
@@ -107,8 +108,9 @@ function NewFolderDialog({ children }: { children: React.ReactNode }) {
 
 // ─── Link Context Menu ────────────────────────────────────────────────────────
 
-function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
+function LinkContextMenu({ link, folders, tags }: { link: Link; folders: Folder[]; tags: Tag[] }) {
   const [editOpen, setEditOpen] = React.useState(false)
+  const [shareOpen, setShareOpen] = React.useState(false)
 
   return (
     <>
@@ -139,7 +141,7 @@ function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
             <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 text-xs">
+          <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setShareOpen(true)}>
             <HugeiconsIcon icon={Share01Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
             Share
           </DropdownMenuItem>
@@ -154,7 +156,8 @@ function LinkContextMenu({ link, folders }: { link: Link; folders: Folder[] }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EditLinkDialog link={link} folders={folders} open={editOpen} onOpenChange={setEditOpen} />
+      <EditLinkDialog link={link} folders={folders} tags={tags} open={editOpen} onOpenChange={setEditOpen} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} linkId={link.id} itemTitle={link.title} itemType="link" />
     </>
   )
 }
@@ -165,9 +168,10 @@ interface HomeContentProps {
   user: SidebarUser | null
   links: Link[]
   folders: Folder[]
+  tags: Tag[]
 }
 
-export function HomeContent({ user, links, folders }: HomeContentProps) {
+export function HomeContent({ user, links, folders, tags }: HomeContentProps) {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
   const [selectedLinks, setSelectedLinks] = React.useState<Set<string>>(new Set())
 
@@ -191,7 +195,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
       {/* ── Quick actions bar ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <AddLinkDialog folders={folders}>
+          <AddLinkDialog folders={folders} tags={tags}>
             <Button size="sm" className="gap-1.5">
               <HugeiconsIcon icon={Link01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add Link
@@ -286,7 +290,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
           <p className="text-xs text-muted-foreground mt-1 max-w-xs">
             Start by adding your first link to organize and share your bookmarks.
           </p>
-          <AddLinkDialog folders={folders}>
+          <AddLinkDialog folders={folders} tags={tags}>
             <Button size="sm" className="mt-4 gap-1.5">
               <HugeiconsIcon icon={Add01Icon} size={15} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
               Add your first link
@@ -299,7 +303,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
       {links.length > 0 && viewMode === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {/* Add link card */}
-          <AddLinkDialog folders={folders}>
+          <AddLinkDialog folders={folders} tags={tags}>
             <div className="flex flex-col rounded-xl border-2 border-dashed border-border bg-muted/20 overflow-hidden cursor-pointer hover:border-primary/40 hover:bg-muted/40 transition-all group min-h-45">
               <div className="flex flex-1 flex-col items-center justify-center gap-2.5">
                 <Button
@@ -402,7 +406,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
                     >
                       <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} color="currentColor" strokeWidth={2} aria-hidden="true" />
                     </Button>
-                    <LinkContextMenu link={link} folders={folders} />
+                    <LinkContextMenu link={link} folders={folders} tags={tags} />
                   </div>
                 </div>
               </div>
@@ -483,7 +487,7 @@ export function HomeContent({ user, links, folders }: HomeContentProps) {
                 </div>
 
                 {/* Actions */}
-                <LinkContextMenu link={link} folders={folders} />
+                <LinkContextMenu link={link} folders={folders} tags={tags} />
               </div>
             )
           })}
