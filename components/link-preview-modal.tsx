@@ -55,7 +55,7 @@ export function LinkPreviewModal({ link, onClose }: LinkPreviewModalProps) {
   return (
     <Dialog open={!!link} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent
-        className="flex flex-col gap-0 p-0 max-w-5xl w-[95vw] h-[90vh] overflow-hidden"
+        className="flex flex-col gap-0 p-0 !max-w-5xl w-[100vw] h-[90vh] overflow-hidden"
         showCloseButton={false}
       >
         {/* ── Header ── */}
