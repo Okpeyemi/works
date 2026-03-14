@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Notification01Icon } from "@hugeicons/core-free-icons"
+import { ChatBot } from "@/components/chat-bot"
 
 interface BreadcrumbEntry {
   label: string
@@ -96,6 +97,8 @@ export function DashboardShell({
         {/* ── Content ── */}
         <div className="flex flex-1 flex-col gap-6 p-6">{children}</div>
       </SidebarInset>
+
+      <ChatBot />
     </SidebarProvider>
   )
 }
