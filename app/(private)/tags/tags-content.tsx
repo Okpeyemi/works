@@ -34,22 +34,62 @@ import type { Tag } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { createTag, updateTag, deleteTag } from "@/lib/actions/tags"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+
+// ─── Tag color swatches ───────────────────────────────────────────────────────
+
+const TAG_COLORS = [
+  "#6366f1", // indigo
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#ef4444", // red
+  "#f97316", // orange
+  "#eab308", // yellow
+  "#22c55e", // green
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#3b82f6", // blue
+  "#64748b", // slate
+  "#78716c", // stone
+]
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TAG_COLORS.map((color) => (
+        <button
+          key={color}
+          type="button"
+          onClick={() => onChange(color)}
+          className={cn(
+            "size-6 rounded-full ring-offset-background transition-all",
+            value === color ? "ring-2 ring-offset-2 ring-foreground scale-110" : "hover:scale-110"
+          )}
+          style={{ backgroundColor: color }}
+          aria-label={color}
+        />
+      ))}
+    </div>
+  )
+}
 
 // ─── Create Tag Dialog ────────────────────────────────────────────────────────
 
 function CreateTagDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false)
   const [name, setName] = React.useState("")
+  const [color, setColor] = React.useState(TAG_COLORS[0])
   const [loading, setLoading] = React.useState(false)
+
+  function handleClose() { setOpen(false); setName(""); setColor(TAG_COLORS[0]) }
 
   async function handleCreate() {
     const trimmed = name.trim()
     if (!trimmed) return
     setLoading(true)
     try {
-      await createTag({ name: trimmed })
-      setName("")
-      setOpen(false)
+      await createTag({ name: trimmed, color })
+      handleClose()
       toast.success("Tag created")
     } catch {
       toast.error("Failed to create tag")
@@ -59,20 +99,27 @@ function CreateTagDialog({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setName("") }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true) }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Create tag</DialogTitle>
           <DialogDescription>Add a new tag to categorize your links.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); handleCreate() }} className="space-y-3 py-2">
+        <form onSubmit={(e) => { e.preventDefault(); handleCreate() }} className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="tag-name" className="text-sm font-medium">Tag name</Label>
-            <Input id="tag-name" placeholder="e.g. frontend" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            <div className="flex items-center gap-2">
+              <span className="size-4 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <Input id="tag-name" placeholder="e.g. frontend" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Color</Label>
+            <ColorPicker value={color} onChange={setColor} />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)} disabled={loading}>Cancel</Button>
+            <Button type="button" variant="outline" size="sm" onClick={handleClose} disabled={loading}>Cancel</Button>
             <Button type="submit" size="sm" disabled={loading || !name.trim()}>
               {loading ? "Creating..." : "Create"}
             </Button>
@@ -87,20 +134,23 @@ function CreateTagDialog({ children }: { children: React.ReactNode }) {
 
 function EditTagDialog({ tag, open, onOpenChange }: { tag: Tag; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [name, setName] = React.useState(tag.name)
+  const [color, setColor] = React.useState(tag.color ?? TAG_COLORS[0])
   const [loading, setLoading] = React.useState(false)
 
-  React.useEffect(() => { if (open) setName(tag.name) }, [open, tag])
+  React.useEffect(() => {
+    if (open) { setName(tag.name); setColor(tag.color ?? TAG_COLORS[0]) }
+  }, [open, tag])
 
   async function handleSave() {
     const trimmed = name.trim()
     if (!trimmed) return
     setLoading(true)
     try {
-      await updateTag(tag.id, { name: trimmed })
-      toast.success("Tag renamed")
+      await updateTag(tag.id, { name: trimmed, color })
+      toast.success("Tag updated")
       onOpenChange(false)
     } catch {
-      toast.error("Failed to rename tag")
+      toast.error("Failed to update tag")
     } finally {
       setLoading(false)
     }
@@ -110,13 +160,20 @@ function EditTagDialog({ tag, open, onOpenChange }: { tag: Tag; open: boolean; o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Rename tag</DialogTitle>
-          <DialogDescription>Enter a new name for this tag.</DialogDescription>
+          <DialogTitle>Edit tag</DialogTitle>
+          <DialogDescription>Update the name and color of this tag.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="space-y-3 py-2">
+        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="tag-rename" className="text-sm font-medium">Tag name</Label>
-            <Input id="tag-rename" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            <div className="flex items-center gap-2">
+              <span className="size-4 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <Input id="tag-rename" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Color</Label>
+            <ColorPicker value={color} onChange={setColor} />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
@@ -192,9 +249,18 @@ export function TagsContent({ user, tags, linksCountMap }: TagsContentProps) {
               key={tag.id}
               className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 cursor-pointer hover:shadow-md transition-all"
             >
-              {/* Tag icon */}
-              <div className="size-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10 text-primary">
-                <HugeiconsIcon icon={Tag01Icon} size={18} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+              {/* Tag color dot */}
+              <div
+                className="size-10 rounded-lg flex items-center justify-center shrink-0"
+                style={{ backgroundColor: tag.color ? `${tag.color}22` : undefined }}
+              >
+                <HugeiconsIcon
+                  icon={Tag01Icon}
+                  size={18}
+                  color={tag.color ?? "currentColor"}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
               </div>
 
               {/* Info */}
@@ -216,7 +282,7 @@ export function TagsContent({ user, tags, linksCountMap }: TagsContentProps) {
                 <DropdownMenuContent align="end" className="w-36">
                   <DropdownMenuItem className="gap-2 text-xs" onSelect={() => setEditingTag(tag)}>
                     <HugeiconsIcon icon={Edit02Icon} size={14} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
-                    Rename
+                    Edit
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="gap-2 text-xs text-destructive" onClick={() => deleteTag(tag.id).then(() => toast.success("Tag deleted")).catch(() => toast.error("Failed to delete tag"))}>

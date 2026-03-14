@@ -33,12 +33,22 @@ import {
   Share01Icon,
   Link01Icon,
 } from "@hugeicons/core-free-icons"
-import type { Folder } from "@/lib/types"
+import type { Folder, Link } from "@/lib/types"
 import type { SidebarUser } from "@/components/app-sidebar"
 import { formatDate } from "@/lib/utils"
 import { createFolder, updateFolder, trashFolder } from "@/lib/actions/folders"
 import { ShareDialog } from "@/components/share-dialog"
+import { LinkPreviewModal } from "@/components/link-preview-modal"
 import { toast } from "sonner"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
+  ExternalLink,
+} from "@hugeicons/core-free-icons"
 
 // ─── New Folder Dialog ────────────────────────────────────────────────────────
 
@@ -140,12 +150,19 @@ function EditFolderDialog({ folder, open, onOpenChange }: { folder: Folder; open
 interface FoldersContentProps {
   user: SidebarUser | null
   folders: Folder[]
+  links: Link[]
   linksCountMap: Record<string, number>
 }
 
-export function FoldersContent({ user, folders, linksCountMap }: FoldersContentProps) {
+export function FoldersContent({ user, folders, links, linksCountMap }: FoldersContentProps) {
   const [editingFolder, setEditingFolder] = React.useState<Folder | null>(null)
   const [sharingFolder, setSharingFolder] = React.useState<Folder | null>(null)
+  const [selectedFolder, setSelectedFolder] = React.useState<Folder | null>(null)
+  const [previewLink, setPreviewLink] = React.useState<Link | null>(null)
+
+  const folderLinks = selectedFolder
+    ? links.filter((l) => l.folder_id === selectedFolder.id)
+    : []
 
   return (
     <DashboardShell title="Folders" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Folders" }]} user={user}>
@@ -219,6 +236,7 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
               <div
                 key={folder.id}
                 className="group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden cursor-pointer hover:shadow-md transition-all"
+                onClick={() => setSelectedFolder(folder)}
               >
                 <div className="flex-1 p-4 space-y-3">
                   <div className="flex items-start justify-between">
@@ -227,7 +245,7 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`More options for ${folder.name}`}>
+                        <Button variant="ghost" size="icon-xs" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`More options for ${folder.name}`} onClick={(e) => e.stopPropagation()}>
                           <HugeiconsIcon icon={MoreHorizontalIcon} size={14} color="currentColor" strokeWidth={2} aria-hidden="true" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -277,6 +295,67 @@ export function FoldersContent({ user, folders, linksCountMap }: FoldersContentP
           onOpenChange={(open) => { if (!open) setEditingFolder(null) }}
         />
       )}
+
+      {/* ── Folder Links Panel ── */}
+      <Sheet open={!!selectedFolder} onOpenChange={(open) => { if (!open) setSelectedFolder(null) }}>
+        <SheetContent className="w-full sm:max-w-md flex flex-col gap-0 p-0">
+          <SheetHeader className="px-5 py-4 border-b border-border">
+            <div className="flex items-center gap-2.5">
+              <div className="size-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary shrink-0">
+                <HugeiconsIcon icon={Folder01Icon} size={16} color="currentColor" strokeWidth={1.5} aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <SheetTitle className="text-sm font-semibold truncate">{selectedFolder?.name}</SheetTitle>
+                <p className="text-[11px] text-muted-foreground">{folderLinks.length} link{folderLinks.length !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto">
+            {folderLinks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                <div className="size-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+                  <HugeiconsIcon icon={Link01Icon} size={20} color="currentColor" strokeWidth={1.5} className="text-muted-foreground" aria-hidden="true" />
+                </div>
+                <p className="text-sm font-semibold">No links in this folder</p>
+                <p className="text-xs text-muted-foreground mt-1">Add links to this folder to see them here.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {folderLinks.map((link) => (
+                  <li key={link.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-muted/40 transition-colors group/link cursor-pointer" onClick={() => setPreviewLink(link)}>
+                    <div className="size-8 rounded-md border border-border bg-muted/50 flex items-center justify-center shrink-0 mt-0.5 overflow-hidden">
+                      {link.favicon ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={link.favicon} alt="" className="size-4" />
+                      ) : (
+                        <HugeiconsIcon icon={Link01Icon} size={14} color="currentColor" strokeWidth={1.5} className="text-muted-foreground" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{link.domain}</p>
+                    </div>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity mt-1"
+                      aria-label={`Open ${link.title}`}
+                    >
+                      <HugeiconsIcon icon={ExternalLink} size={14} color="currentColor" strokeWidth={1.5} className="text-muted-foreground hover:text-foreground transition-colors" aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ── Link Preview Modal ── */}
+      <LinkPreviewModal link={previewLink} onClose={() => setPreviewLink(null)} />
 
       {/* ── Share Folder Dialog ── */}
       <ShareDialog

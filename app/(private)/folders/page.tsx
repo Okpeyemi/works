@@ -19,5 +19,5 @@ export default async function FoldersPage() {
     }
   }
 
-  return <FoldersContent user={toSidebarUser(user)} folders={folders} linksCountMap={linksCountMap} />
+  return <FoldersContent user={toSidebarUser(user)} folders={folders} links={links} linksCountMap={linksCountMap} />
 }

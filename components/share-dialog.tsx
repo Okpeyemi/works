@@ -60,21 +60,20 @@ export function ShareDialog({
     if (!trimmedEmail) return
     setLoading(true)
     try {
-      await createShare({
+      const result = await createShare({
         link_id: linkId,
         folder_id: folderId,
         target_email: trimmedEmail,
         permission,
       })
-      toast.success(`${itemType === "folder" ? "Folder" : "Link"} shared — an email has been sent to ${trimmedEmail}`)
-      handleClose()
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error"
-      if (msg === "User not found") {
-        toast.error("No account found with this email address")
+      if (result.invited) {
+        toast.success(`Invitation sent to ${trimmedEmail} — they'll be notified to create an account`)
       } else {
-        toast.error("Failed to share — please try again")
+        toast.success(`${itemType === "folder" ? "Folder" : "Link"} shared — an email has been sent to ${trimmedEmail}`)
       }
+      handleClose()
+    } catch {
+      toast.error("Failed to share — please try again")
     } finally {
       setLoading(false)
     }
@@ -91,7 +90,7 @@ export function ShareDialog({
             <DialogTitle>Share {itemType}</DialogTitle>
           </div>
           <DialogDescription>
-            Share <span className="font-medium text-foreground">&ldquo;{itemTitle}&rdquo;</span> with another Works user. They will receive an email notification.
+            Share <span className="font-medium text-foreground">&ldquo;{itemTitle}&rdquo;</span> with another Bunkle user. They will receive an email notification.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,7 +147,7 @@ export function ShareDialog({
           </div>
 
           <p className="text-[11px] text-muted-foreground bg-muted/60 rounded-lg px-3 py-2">
-            The recipient must already have a Works account. They will receive an email with a link to view the shared content.
+            If the recipient doesn&apos;t have an account yet, they&apos;ll receive an invitation email to sign up with Google.
           </p>
         </div>
 

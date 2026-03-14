@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/email"
-import { buildShareEmail } from "@/lib/email-templates"
+import { buildShareEmail, buildInviteEmail } from "@/lib/email-templates"
 
 // ─── Get shares I created ───────────────────────────────────────────────────────
 
@@ -46,20 +46,89 @@ export async function createShare(input: {
   folder_id?: string
   target_email: string
   permission?: "READ" | "WRITE"
-}) {
+}): Promise<{ invited: boolean }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  // Fetch owner profile + item info up front (needed for both paths)
+  const { data: ownerProfile } = await supabase
+    .from("users")
+    .select("name, email")
+    .eq("id", user.id)
+    .single()
+
+  const ownerName = ownerProfile?.name ?? ownerProfile?.email ?? "Someone"
+  const ownerEmail = ownerProfile?.email ?? user.email ?? ""
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001"
+
+  let itemType: "link" | "folder" = "link"
+  let itemTitle = "Untitled"
+  let itemUrl: string | undefined
+  let itemDomain: string | undefined
+
+  if (input.link_id) {
+    const { data: link } = await supabase
+      .from("links")
+      .select("title, url, domain")
+      .eq("id", input.link_id)
+      .single()
+    if (link) { itemType = "link"; itemTitle = link.title; itemUrl = link.url; itemDomain = link.domain }
+  } else if (input.folder_id) {
+    const { data: folder } = await supabase
+      .from("folders")
+      .select("name")
+      .eq("id", input.folder_id)
+      .single()
+    if (folder) { itemType = "folder"; itemTitle = folder.name }
+  }
+
   // Find target user by email
-  const { data: targetUser, error: userError } = await supabase
+  const { data: targetUser } = await supabase
     .from("users")
     .select("id")
     .eq("email", input.target_email)
     .single()
 
-  if (userError || !targetUser) throw new Error("User not found")
+  // ── User doesn't have an account yet → save pending share + send invite ─────
+  if (!targetUser) {
+    // Store the pending share so it resolves automatically when they sign up
+    const { error: pendingError } = await supabase
+      .from("shares")
+      .insert({
+        link_id: input.link_id || null,
+        folder_id: input.folder_id || null,
+        owner_id: user.id,
+        target_id: null,
+        target_email: input.target_email,
+        permission: input.permission || "READ",
+      })
+    if (pendingError) throw pendingError
 
+    await supabase.from("activities").insert({
+      action: "SHARE",
+      user_id: user.id,
+      link_id: input.link_id || null,
+      folder_id: input.folder_id || null,
+      metadata: { target_email: input.target_email, permission: input.permission || "READ", pending: true },
+    })
+
+    const { subject, html } = buildInviteEmail({
+      ownerName,
+      ownerEmail,
+      itemType,
+      itemTitle,
+      itemUrl,
+      itemDomain,
+      siteUrl,
+    })
+    await sendEmail({ to: input.target_email, subject, html })
+
+    revalidatePath("/shared")
+    return { invited: true }
+  }
+
+  // ── User exists → create share record ───────────────────────────────────────
   const { data, error } = await supabase
     .from("shares")
     .insert({
@@ -82,47 +151,8 @@ export async function createShare(input: {
     metadata: { target_email: input.target_email, permission: input.permission || "READ" },
   })
 
-  // ── Send notification email ──────────────────────────────────────────────────
+  // Send notification email
   try {
-    const { data: ownerProfile } = await supabase
-      .from("users")
-      .select("name, email")
-      .eq("id", user.id)
-      .single()
-
-    const ownerName = ownerProfile?.name ?? ownerProfile?.email ?? "Someone"
-    const ownerEmail = ownerProfile?.email ?? user.email ?? ""
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001"
-
-    let itemType: "link" | "folder" = "link"
-    let itemTitle = "Untitled"
-    let itemUrl: string | undefined
-    let itemDomain: string | undefined
-
-    if (input.link_id) {
-      const { data: link } = await supabase
-        .from("links")
-        .select("title, url, domain")
-        .eq("id", input.link_id)
-        .single()
-      if (link) {
-        itemType = "link"
-        itemTitle = link.title
-        itemUrl = link.url
-        itemDomain = link.domain
-      }
-    } else if (input.folder_id) {
-      const { data: folder } = await supabase
-        .from("folders")
-        .select("name")
-        .eq("id", input.folder_id)
-        .single()
-      if (folder) {
-        itemType = "folder"
-        itemTitle = folder.name
-      }
-    }
-
     const { subject, html } = buildShareEmail({
       ownerName,
       ownerEmail,
@@ -133,14 +163,13 @@ export async function createShare(input: {
       permission: input.permission ?? "READ",
       siteUrl,
     })
-
     await sendEmail({ to: input.target_email, subject, html })
   } catch {
-    // Email sending is best-effort — don't fail the share if email fails
+    // best-effort
   }
 
   revalidatePath("/shared")
-  return data
+  return { invited: false }
 }
 
 // ─── Update share permission ────────────────────────────────────────────────────
